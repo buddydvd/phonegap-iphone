@@ -182,7 +182,9 @@
     if ([resourceURL isFileURL]) {
         audioFile.player = [[[ AudioPlayer alloc ] initWithContentsOfURL:resourceURL error:&error] autorelease];
     } else {
-        NSData* data = [NSData dataWithContentsOfURL:resourceURL];
+        NSURLRequest *request = [NSURLRequest requestWithURL:resourceURL];
+        NSURLResponse *response = nil;
+        NSData *data = [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:&error];
         audioFile.player = [[[ AudioPlayer alloc ] initWithData:data error:&error] autorelease];
     }
     
