@@ -231,7 +231,11 @@
             NSURLRequest *request = [NSURLRequest requestWithURL:resourceURL];
             NSURLResponse *response = nil;
             NSData *data = [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:&playerError];
-            audioFile.player = [[[ AudioPlayer alloc ] initWithData:data error:&playerError] autorelease];
+            if (playerError) {
+                NSLog(@"Unable to download audio from: %@", [resourceURL absoluteString]);
+            } else {
+                audioFile.player = [[[ AudioPlayer alloc ] initWithData:data error:&playerError] autorelease];
+            }
         }
     }
     if (playerError != nil) {
