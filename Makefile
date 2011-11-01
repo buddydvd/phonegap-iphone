@@ -77,6 +77,8 @@ clean-xcode3-template:
 		$(MV) $(BUILD_BAK)/www/ "PhoneGap-based Application/www"; \
 	fi	
 	@$(RM_RF) PhoneGap-based\ Application/build/
+	@$(RM_RF) PhoneGap-based\ Application/___PROJECTNAME___.xcodeproj/xcuserdata
+	@$(RM_RF) PhoneGap-based\ Application/___PROJECTNAME___.xcodeproj/project.xcworkspace
 	@$(RM_F) PhoneGap-based\ Application/___PROJECTNAME___.xcodeproj/*.mode1v3
 	@$(RM_F) PhoneGap-based\ Application/___PROJECTNAME___.xcodeproj/*.perspectivev3
 	@$(RM_F) PhoneGap-based\ Application/___PROJECTNAME___.xcodeproj/*.pbxuser
@@ -125,6 +127,9 @@ clean: clean-installer clean-phonegap-lib clean-xcode3-template clean-xcode4-tem
 	fi
 	@$(RM_RF) $(BUILD_BAK)
 
+checkos:
+	@if [ "$$OSTYPE" != "darwin11" ]; then echo "Error: You need to package the installer on a Mac OS X 10.7 Lion system."; exit 1; fi
+	
 installer: clean markdown phonegap-lib xcode3-template xcode4-template phonegap-framework
 	@# remove the dist folder
 	@if [ -d "dist" ]; then \
@@ -170,7 +175,7 @@ installer: clean markdown phonegap-lib xcode3-template xcode4-template phonegap-
 	@echo "Done."
 	@make clean
 
-install: installer
+install: installer	
 	@open dist/files/PhoneGap-${PGVER}.pkg
 
 uninstall:

@@ -18,6 +18,8 @@ Camera = function() {
  *	{number} targetWidth - width in pixels to scale image default = 0 (no scaling)
  *  {number} targetHeight - height in pixels to scale image default = 0 (no scaling)
  *  {Camera.EncodingType} - encodingType default = JPEG
+ *  {boolean} correctOrientation - Rotate the image to correct for the orientation of the device during capture (iOS only)
+ *  {boolean} saveToPhotoAlbum - Save the image to the photo album on the device after capture (iOS only)
  */
 /**
  * Format of image that is returned from getPicture.
@@ -62,6 +64,23 @@ Camera.EncodingType = {
 	PNG: 1                      // Return PNG encoded image 
 };
 Camera.prototype.EncodingType = Camera.EncodingType;
+
+/** 
+ * Type of pictures to select from.  Only applicable when
+ *	PictureSourceType is PHOTOLIBRARY or SAVEDPHOTOALBUM 
+ * 
+ * Example: navigator.camera.getPicture(success, fail, 
+ *              { quality: 80, 
+ *                destinationType: Camera.DestinationType.DATA_URL, 
+ *                sourceType: Camera.PictureSourceType.PHOTOLIBRARY, 
+ *                mediaType: Camera.MediaType.PICTURE}) 
+ */ 
+Camera.MediaType = { 
+	PICTURE: 0,             // allow selection of still pictures only. DEFAULT. Will return format specified via DestinationType
+	VIDEO: 1,                // allow selection of video only, ONLY RETURNS URL
+	ALLMEDIA : 2			// allow selection from all media types
+};
+Camera.prototype.MediaType = Camera.MediaType;
 
 /**
  * Gets a picture from source defined by "options.sourceType", and returns the

@@ -79,8 +79,10 @@ typedef NSUInteger MediaMsg;
 @interface PGSound : PGPlugin <AVAudioPlayerDelegate, AVAudioRecorderDelegate>
 {
 	NSMutableDictionary* soundCache;
+    AVAudioSession* avSession;
 }
 @property (nonatomic, retain) NSMutableDictionary* soundCache;
+@property (nonatomic, retain) AVAudioSession* avSession;
 
 - (void) play:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
 - (void) pause:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
@@ -88,11 +90,12 @@ typedef NSUInteger MediaMsg;
 - (void) release:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
 - (void) getCurrentPosition:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
 - (void) prepare:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
+- (BOOL) hasAudioSession;
 
 // helper methods
 - (PGAudioFile*) audioFileForResource:(NSString*) resourcePath withId: (NSString*)mediaId;
 - (BOOL) prepareToPlay: (PGAudioFile*) audioFile withId: (NSString*)mediaId;
-
+- (NSString*) createMediaErrorWithCode: (MediaError) code message: (NSString*) message;
 
 - (void) startAudioRecord:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
 - (void) stopAudioRecord:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;

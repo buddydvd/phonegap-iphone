@@ -42,10 +42,11 @@
         [self writeJavascript:[result toErrorCallbackString:callbackId]];
         
 	} else {
-        
         bool allowEdit = [[options valueForKey:@"allowEdit"] boolValue];
         NSNumber* targetWidth = [options valueForKey:@"targetWidth"];
         NSNumber* targetHeight = [options valueForKey:@"targetHeight"];
+        NSNumber* mediaValue = [options valueForKey:@"mediaType"];
+        MediaType mediaType = (mediaValue) ? [mediaValue intValue] : MediaTypePicture;
         
         CGSize targetSize = CGSizeMake(0, 0);
         if (targetWidth != nil && targetHeight != nil) {
@@ -64,10 +65,22 @@
         self.pickerController.callbackId = callbackId;
         self.pickerController.targetSize = targetSize;
         self.pickerController.correctOrientation = [[options valueForKey:@"correctOrientation"] boolValue];
+        self.pickerController.saveToPhotoAlbum = [[options valueForKey:@"saveToPhotoAlbum"] boolValue];
         self.pickerController.encodingType = [[options valueForKey:@"encodingType"] intValue] || EncodingTypeJPEG;
         
         self.pickerController.quality = [options integerValueForKey:@"quality" defaultValue:100 withRange:NSMakeRange(0, 100)];
         self.pickerController.returnType = (DestinationType)[options integerValueForKey:@"destinationType" defaultValue:0 withRange:NSMakeRange(0, 2)];
+       
+        if (sourceType == UIImagePickerControllerSourceTypeCamera) {
+            // we only allow taking pictures (no video) in this api
+            self.pickerController.mediaTypes = [NSArray arrayWithObjects: (NSString*) kUTTypeImage, nil];
+        } else if (mediaType == MediaTypeAll) {
+            self.pickerController.mediaTypes = [UIImagePickerController availableMediaTypesForSourceType: sourceType];
+        } else {
+            NSArray* mediaArray = [NSArray arrayWithObjects: (NSString*) (mediaType == MediaTypeVideo ? kUTTypeMovie : kUTTypeImage), nil];
+            self.pickerController.mediaTypes = mediaArray;
+            
+        }
         
         if([self popoverSupported] && sourceType != UIImagePickerControllerSourceTypeCamera)
         {
@@ -111,13 +124,14 @@
 	{
 		[self.pickerController dismissModalViewControllerAnimated:YES]; 
 	}
-	
+	NSString* jsString = nil;
+    PluginResult* result = nil;
+    
 	NSString* mediaType = [info objectForKey:UIImagePickerControllerMediaType];
 	if ([mediaType isEqualToString:(NSString*)kUTTypeImage])
 	{
 		
-		NSString* jsString = NULL;
-		PluginResult* result = nil;
+		
 		
 		// get the image
 		UIImage* image = nil;
@@ -126,6 +140,10 @@
 		}else {
 			image = [info objectForKey:UIImagePickerControllerOriginalImage];
 		}
+    if (self.pickerController.saveToPhotoAlbum) {
+      UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil);
+    }
+    
     if (self.pickerController.correctOrientation) {
       image = [self imageCorrectedForCaptureOrientation:image];
     }
@@ -170,9 +188,18 @@
 			result = [PluginResult resultWithStatus: PGCommandStatus_OK messageAsString: [data base64EncodedString]];
 			jsString = [result toSuccessCallbackString:callbackId];
 		}
-		[self.webView stringByEvaluatingJavaScriptFromString:jsString];
 		
-	}
+		
+	} else {
+        // was movie type
+         NSString *moviePath = [[info objectForKey: UIImagePickerControllerMediaURL] absoluteString];
+        result = [PluginResult resultWithStatus: PGCommandStatus_OK messageAsString: moviePath];
+        jsString = [result toSuccessCallbackString:callbackId];
+        
+    }
+    if (jsString) {
+        [self.webView stringByEvaluatingJavaScriptFromString:jsString];
+    }
 	
 	self.pickerController.delegate = nil;
 	self.pickerController = nil;
@@ -261,11 +288,11 @@
     return newImage;
 }
 
-- (UIImage *)imageCorrectedForCaptureOrientation:(UIImage*)image
+- (UIImage*)imageCorrectedForCaptureOrientation:(UIImage*)anImage
 {   
    float rotation_radians = 0;
    bool perpendicular = false;
-   switch ([image imageOrientation]) {
+   switch ([anImage imageOrientation]) {
     case UIImageOrientationUp:
       rotation_radians = 0.0;
       break;
@@ -284,21 +311,21 @@
       break;
    }
    
-   UIGraphicsBeginImageContext(CGSizeMake(image.size.width, image.size.height));
+   UIGraphicsBeginImageContext(CGSizeMake(anImage.size.width, anImage.size.height));
    CGContextRef context = UIGraphicsGetCurrentContext();
    
    //Rotate around the center point
-   CGContextTranslateCTM(context, image.size.width/2, image.size.height/2);
+   CGContextTranslateCTM(context, anImage.size.width/2, anImage.size.height/2);
    CGContextRotateCTM(context, rotation_radians);
    
    CGContextScaleCTM(context, 1.0, -1.0);
-   float width = perpendicular ? image.size.height : image.size.width;
-   float height = perpendicular ? image.size.width : image.size.height;
-   CGContextDrawImage(context, CGRectMake(-width / 2, -height / 2, width, height), [image CGImage]);
+   float width = perpendicular ? anImage.size.height : anImage.size.width;
+   float height = perpendicular ? anImage.size.width : anImage.size.height;
+   CGContextDrawImage(context, CGRectMake(-width / 2, -height / 2, width, height), [anImage CGImage]);
    
    // Move the origin back since the rotation might've change it (if its 90 degrees)
    if (perpendicular) {
-     CGContextTranslateCTM(context, -image.size.height/2, -image.size.width/2);
+     CGContextTranslateCTM(context, -anImage.size.height/2, -anImage.size.width/2);
    }
    
    UIImage *newImage = UIGraphicsGetImageFromCurrentImageContext();
@@ -365,6 +392,7 @@
 @synthesize popoverController;
 @synthesize targetSize;
 @synthesize correctOrientation;
+@synthesize saveToPhotoAlbum;
 @synthesize encodingType;
 
 

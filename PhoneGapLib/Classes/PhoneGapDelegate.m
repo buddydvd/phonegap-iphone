@@ -31,7 +31,6 @@
 
 // readwrite access for self
 
-@property (nonatomic, readwrite, retain) IBOutlet UIWindow *window;
 @property (nonatomic, readwrite, retain) IBOutlet PhoneGapViewController *viewController;
 @property (nonatomic, readwrite, retain) IBOutlet UIActivityIndicatorView *activityView;
 @property (nonatomic, readwrite, retain) UIImageView *imageView;
@@ -390,7 +389,8 @@ BOOL gSplashScreenShown = NO;
     
     NSNumber *enableLocation       = [self.settings objectForKey:@"EnableLocation"];
     NSString *enableViewportScale  = [self.settings objectForKey:@"EnableViewportScale"];
-    
+    NSNumber *allowInlineMediaPlayback = [self.settings objectForKey:@"AllowInlineMediaPlayback"];
+    NSNumber *mediaPlaybackRequiresUserAction = [self.settings objectForKey:@"MediaPlaybackRequiresUserAction"];
     
     // The first item in the supportedOrientations array is the start orientation (guaranteed to be at least Portrait)
     [[UIApplication sharedApplication] setStatusBarOrientation:[[supportedOrientations objectAtIndex:0] intValue]];
@@ -418,6 +418,16 @@ BOOL gSplashScreenShown = NO;
         
     /*
      * Fire up the GPS Service right away as it takes a moment for data to come back.
+     */
+    if ([allowInlineMediaPlayback boolValue] && [self.webView respondsToSelector:@selector(allowsInlineMediaPlayback)]) {
+        self.webView.allowsInlineMediaPlayback = YES;
+    }
+    if ([mediaPlaybackRequiresUserAction boolValue] && [self.webView respondsToSelector:@selector(mediaPlaybackRequiresUserAction)]) {
+        self.webView.mediaPlaybackRequiresUserAction = YES;
+    }
+
+    /*
+     * This is for iOS 4.x, where you can allow inline <video> and <audio>, and also autoplay them
      */
     if ([enableLocation boolValue]) {
         [[self getCommandInstance:@"com.phonegap.geolocation"] startLocation:nil withDict:nil];
@@ -492,8 +502,8 @@ BOOL gSplashScreenShown = NO;
     if (cmd && [cmd isKindOfClass:[PGConnection class]]) 
     {
         NSMutableDictionary *connProps = [NSMutableDictionary dictionaryWithCapacity:3];
-        if ([cmd respondsToSelector:@selector(type)]) {
-            [connProps setObject:[cmd type] forKey:@"type"];
+        if ([cmd respondsToSelector:@selector(connectionType)]) {
+            [connProps setObject:[cmd connectionType] forKey:@"type"];
         }
         [devProps setObject:connProps forKey:@"connection"];
     }
@@ -554,7 +564,7 @@ BOOL gSplashScreenShown = NO;
 
     
     NSDictionary *deviceProperties = [ self deviceProperties];
-    NSMutableString *result = [[NSMutableString alloc] initWithFormat:@"DeviceInfo = %@;", [deviceProperties JSONFragment]];
+    NSMutableString *result = [[NSMutableString alloc] initWithFormat:@"DeviceInfo = %@;", [deviceProperties JSONString]];
     
     /* Settings.plist
      * Read the optional Settings.plist file and push these user-defined settings down into the web application.
@@ -563,8 +573,8 @@ BOOL gSplashScreenShown = NO;
      */
     
     NSDictionary *temp = [[self class] getBundlePlist:@"Settings"];
-    if ([temp respondsToSelector:@selector(JSONFragment)]) {
-        [result appendFormat:@"\nwindow.Settings = %@;", [temp JSONFragment]];
+    if ([temp respondsToSelector:@selector(JSONString)]) {
+        [result appendFormat:@"\nwindow.Settings = %@;", [temp JSONString]];
     }
     
     NSLog(@"Device initialization: %@", result);
@@ -616,15 +626,15 @@ BOOL gSplashScreenShown = NO;
         @"PhoneGap.getAndClearQueuedCommands()"];
 
     // Parse the returned JSON array.
-    SBJsonParser* jsonParser = [[[SBJsonParser alloc] init] autorelease];
+    //PG_SBJsonParser* jsonParser = [[[PG_SBJsonParser alloc] init] autorelease];
     NSArray* queuedCommands =
-        [jsonParser objectWithString:queuedCommandsJSON];
+        [queuedCommandsJSON objectFromJSONString];
 
     // Iterate over and execute all of the commands.
     for (NSString* commandJson in queuedCommands) {
         [self execute:
             [InvokedUrlCommand commandFromObject:
-                [jsonParser objectWithString:commandJson]]];
+                [commandJson mutableObjectFromJSONString]]];
     }
 
     return [queuedCommands count];
@@ -679,8 +689,11 @@ BOOL gSplashScreenShown = NO;
     {            
         if ([self.whitelist URLIsAllowed:url] == YES)
         {
+            // mainDocument will be nil for an iFrame
+            NSString* mainDocument = [webView.request.mainDocumentURL absoluteString];
+
             // anchor target="_blank" - load in Mobile Safari
-            if (navigationType == UIWebViewNavigationTypeOther)
+            if (navigationType == UIWebViewNavigationTypeOther && mainDocument != nil)
             {
                 [[UIApplication sharedApplication] openURL:url];
                 return NO;

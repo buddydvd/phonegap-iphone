@@ -52,16 +52,6 @@ PositionOptions
  
 Geolocation.prototype.getCurrentPosition = function(successCallback, errorCallback, options) 
 {
-    // if (this.listener != null) 
-    // {
-    //     console.log("Geolocation Error: Still waiting for previous getCurrentPosition() request.");
-    //     if (errorCallback && typeof(errorCallback) == 'function')
-    //     {
-    //         errorCallback(new PositionError(PositionError.TIMEOUT, "Geolocation Error: Still waiting for previous getCurrentPosition() request."));
-    //     } 
-    //     return PositionError.TIMEOUT;
-    // }
-    
     // create an always valid local success callback
     var win = successCallback;
     if (!win || typeof(win) != 'function')
@@ -91,7 +81,7 @@ Geolocation.prototype.getCurrentPosition = function(successCallback, errorCallba
             if(this.lastPosition)
             {
                 var now = new Date().getTime();
-                if(now - this.lastPosition.timestamp < options.maximumAge)
+                if((now - this.lastPosition.timestamp) < options.maximumAge)
                 {
                     win(this.lastPosition); // send cached position immediately 
                     return;                 // Note, execution stops here -jm
@@ -116,7 +106,8 @@ Geolocation.prototype.getCurrentPosition = function(successCallback, errorCallba
 	{
 	    self.setError(new PositionError(PositionError.TIMEOUT,"Geolocation Error: Timeout."));
 	};
-	 
+
+    clearTimeout(this.timeoutTimerId);
     this.timeoutTimerId = setTimeout(onTimeout, params.timeout); 
 };
 
@@ -153,9 +144,9 @@ Geolocation.prototype.watchPosition = function(successCallback, errorCallback, o
 	var that = this;
     var lastPos = that.lastPosition? that.lastPosition.clone() : null;
     
-	return setInterval(function() 
-	{
-        var filterFun = function(position) {
+	var intervalFunction = function() {
+        
+		var filterFun = function(position) {
             if (lastPos == null || !position.equals(lastPos)) {
                 // only call the success callback when there is a change in position, per W3C
                 successCallback(position);
@@ -164,8 +155,14 @@ Geolocation.prototype.watchPosition = function(successCallback, errorCallback, o
             // clone the new position, save it as our last position (internal var)
             lastPos = position.clone();
         };
+		
 		that.getCurrentPosition(filterFun, errorCallback, params);
-	}, params.timeout);
+	};
+	
+    // Retrieve location immediately and schedule next retrieval afterwards
+	intervalFunction();
+	
+	return setInterval(intervalFunction, params.timeout);
 };
 
 

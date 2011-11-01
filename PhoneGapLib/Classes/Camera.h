@@ -23,6 +23,12 @@ enum EncodingType {
 };
 typedef NSUInteger EncodingType;
 
+enum MediaType {
+    MediaTypePicture = 0,
+    MediaTypeVideo,
+    MediaTypeAll
+};
+typedef NSUInteger MediaType;
 
 @interface CameraPicker : UIImagePickerController
 {
@@ -37,6 +43,7 @@ typedef NSUInteger EncodingType;
 @property (retain) UIPopoverController* popoverController; 
 @property (assign) CGSize targetSize;
 @property (assign) bool correctOrientation;
+@property (assign) bool saveToPhotoAlbum;
 
 - (void) dealloc;
 
@@ -69,8 +76,8 @@ typedef NSUInteger EncodingType;
 - (void)imagePickerController:(UIImagePickerController*)picker didFinishPickingMediaWithInfo:(NSDictionary*)info;
 - (void)imagePickerController:(UIImagePickerController*)picker didFinishPickingImage:(UIImage*)image editingInfo:(NSDictionary*)editingInfo;
 - (void)imagePickerControllerDidCancel:(UIImagePickerController*)picker;
-- (UIImage*)imageByScalingAndCroppingForSize:(UIImage*)image toSize:(CGSize)targetSize;
-- (UIImage *)imageCorrectedForCaptureOrientation:(UIImage*)anImage;
+- (UIImage*)imageByScalingAndCroppingForSize:(UIImage*)anImage toSize:(CGSize)targetSize;
+- (UIImage*)imageCorrectedForCaptureOrientation:(UIImage*)anImage;
 - (void) dealloc;
 
 @end

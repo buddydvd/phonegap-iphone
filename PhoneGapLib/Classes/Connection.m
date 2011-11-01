@@ -15,7 +15,7 @@
 
 @implementation PGConnection
 
-@synthesize type, internetReach;
+@synthesize connectionType, internetReach;
 
 - (NSString*) w3cConnectionTypeFor:(Reachability*)reachability
 {
@@ -33,22 +33,22 @@
     }
 }
 
-- (BOOL) isCellularConnection:(NSString*)connectionType
+- (BOOL) isCellularConnection:(NSString*)theConnectionType
 {
-	return	[connectionType isEqualToString:@"2g"] ||
-			[connectionType isEqualToString:@"3g"] ||
-			[connectionType isEqualToString:@"4g"];
+	return	[theConnectionType isEqualToString:@"2g"] ||
+			[theConnectionType isEqualToString:@"3g"] ||
+			[theConnectionType isEqualToString:@"4g"];
 }
 
 - (void) updateReachability:(Reachability*)reachability
 {
 	if (reachability) {
-		self.type = [self w3cConnectionTypeFor:reachability];
+		self.connectionType = [self w3cConnectionTypeFor:reachability];
 	}
 	
 	NSString* js = nil;
 	// write the connection type
-	js = [NSString stringWithFormat:@"navigator.network.connection.type = '%@';", self.type];
+	js = [NSString stringWithFormat:@"navigator.network.connection.type = '%@';", self.connectionType];
 	[super writeJavascript:js];
 	
 	// send "online"/"offline" event
@@ -84,17 +84,30 @@
 	
 	self.internetReach = [Reachability reachabilityForInternetConnection];
 	[self.internetReach startNotifier];
-	self.type = [self w3cConnectionTypeFor:self.internetReach];
+	self.connectionType = [self w3cConnectionTypeFor:self.internetReach];
 	
 	[self performSelector:@selector(updateOnlineStatus) withObject:nil afterDelay:1.0];
+}
+
+- (void) onPause 
+{
+	[self.internetReach stopNotifier];
+}
+
+- (void) onResume 
+{
+    [self.internetReach startNotifier];
+    [self updateReachability:self.internetReach];
 }
 
 - (PGPlugin*) initWithWebView:(UIWebView*)theWebView
 {
     self = (PGConnection*)[super initWithWebView:theWebView];
     if (self) {
-		self.type = @"none";
-		[self prepare];
+        self.connectionType = @"none";
+        [self prepare];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onPause) name:UIApplicationDidEnterBackgroundNotification object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onResume) name:UIApplicationWillEnterForegroundNotification object:nil];
     }
     return self;
 }

@@ -554,7 +554,11 @@ static NSDictionary*	com_phonegap_contacts_defaultFields = nil;
 		if (newDict){  // create a new dictionary with a Label and Value, value is the dictionary previously created
             // June, 2011 W3C Contact spec adds type into ContactAddress book
             // get the type out of the original dictionary for address
-			NSObject* typeValue = ((prop == kABPersonInstantMessageProperty) ? (NSObject*)kABOtherLabel : (NSString*)[dict valueForKey: kW3ContactFieldType]);
+            NSString* addrType = (NSString*)[dict valueForKey: kW3ContactFieldType];
+            if (!addrType) {
+                addrType =  (NSString*) kABOtherLabel;
+            }
+			NSObject* typeValue = ((prop == kABPersonInstantMessageProperty) ? (NSObject*)kABOtherLabel : addrType );
             //NSLog(@"typeValue: %@", typeValue);
 			[addDict setObject: typeValue forKey: kW3ContactFieldType];  //  im labels will be set as Other and address labels as type from dictionary
 			[addDict setObject: newDict forKey:kW3ContactFieldValue];
@@ -1548,7 +1552,7 @@ static NSDictionary*	com_phonegap_contacts_defaultFields = nil;
 	if ([[PGContact defaultW3CtoAB] valueForKeyIsNumber: property ]) {
 		ABPropertyID propId = [[[PGContact defaultW3CtoAB] objectForKey: property] intValue];
 		if(ABPersonGetTypeOfProperty(propId) == kABDateTimePropertyType){
-			NSDate* date = [(NSString*)ABRecordCopyValue(self.record, propId) autorelease];
+			NSDate* date = [(NSDate*)ABRecordCopyValue(self.record, propId) autorelease];
 			if (date != nil) {
 				NSString* dateString = [date descriptionWithLocale:[NSLocale currentLocale]];
 				NSPredicate *containPred = [NSPredicate predicateWithFormat:@"SELF contains[cd] %@", testValue];  
