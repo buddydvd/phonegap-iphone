@@ -57,7 +57,7 @@ PhoneGap.available = DeviceInfo.uuid != undefined;
  */
 PhoneGap.addConstructor = function(func) {
     var state = document.readyState;
-    if ( ( state == 'loaded' || state == 'complete' ) && DeviceInfo.uuid != null )
+    if ( DeviceInfo.uuid != null )
     {
         func();
     }
