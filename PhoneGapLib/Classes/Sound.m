@@ -228,7 +228,9 @@
         if ([resourceURL isFileURL]) {
             audioFile.player = [[[ AudioPlayer alloc ] initWithContentsOfURL:resourceURL error:&playerError] autorelease];
         } else {
-            NSData* data = [NSData dataWithContentsOfURL:resourceURL];
+            NSURLRequest *request = [NSURLRequest requestWithURL:resourceURL];
+            NSURLResponse *response = nil;
+            NSData *data = [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:&playerError];
             audioFile.player = [[[ AudioPlayer alloc ] initWithData:data error:&playerError] autorelease];
         }
     }
