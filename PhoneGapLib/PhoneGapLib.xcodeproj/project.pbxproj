@@ -822,6 +822,7 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				INSTALL_PATH = /usr/local/lib;
 				IPHONEOS_DEPLOYMENT_TARGET = 3.0;
+				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_NAME = PhoneGap;
 				SKIP_INSTALL = YES;
 			};
@@ -843,6 +844,7 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				INSTALL_PATH = /usr/local/lib;
 				IPHONEOS_DEPLOYMENT_TARGET = 3.0;
+				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_NAME = PhoneGap;
 				SKIP_INSTALL = YES;
 			};
